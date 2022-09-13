@@ -1,0 +1,133 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model image {
+  id         String @id @default(uuid()) @db.Uuid
+  data       Bytes
+  image_size Int
+  image_type String @db.VarChar(25)
+  name       String @db.VarChar(100)
+  digest     String @db.VarChar(128)
+
+  clientProfile client[]
+}
+
+model client {
+  id            String   @id @default(uuid()) @db.Uuid
+  name          String   @db.VarChar(30)
+  user_name     String   @db.VarChar(30) @unique
+  sex           String   @db.VarChar(7)
+  dob           DateTime @db.Date
+  email         String   @db.VarChar(50)  @unique
+  password_hash Bytes    
+  salt          Bytes
+  bio           String?  @db.VarChar(120)
+  piid          String?  @db.Uuid
+
+  profileImg image? @relation(fields: [piid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "profile_img_id")
+
+  tweets              tweet[]
+  likedTweet          liked_tweets[]
+  retweet             retweets[]
+  client_taged_tweets client_taged_tweets[]
+  followers           followers[]           @relation("follower_client")
+  leader              followers[]           @relation("leader_client")
+  cookies             cookies[]
+}
+
+model hashtag {
+  id               String             @id @default(uuid()) @db.Uuid
+  hashtag          String             @db.VarChar(30) @unique
+  tweeted_hashtags tweeted_hashtags[]
+}
+
+model tweet {
+  id   String   @id @default(uuid()) @db.Uuid
+  uid  String   @db.Uuid
+  body String   @db.VarChar(240)
+  ptid String?  @db.Uuid
+  time DateTime @db.Timestamp()
+
+  replyTweet tweet? @relation("parent_tweet_id", fields: [ptid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "reply_tweet_id")
+
+  clientId client @relation(fields: [uid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "tweet_owner")
+
+  replies             tweet[]               @relation("parent_tweet_id")
+  likes               liked_tweets[]
+  reTweets            retweets[]            @relation("retweet")
+  origTweets          retweets[]            @relation("original_tweet")
+  tweeted_hashtags    tweeted_hashtags[]
+  client_taged_tweets client_taged_tweets[]
+}
+
+model liked_tweets {
+  tid String @db.Uuid
+  uid String @db.Uuid
+
+  likedTweet tweet @relation(fields: [tid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "liked_tweet")
+
+  likedClient client @relation(fields: [uid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "liked_client")
+
+  @@id([tid, uid])
+}
+
+model retweets {
+  tid  String @db.Uuid
+  otid String @db.Uuid
+  uid  String @db.Uuid
+
+  retweet tweet @relation("retweet", fields: [tid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "retweet")
+
+  original_tweet tweet @relation("original_tweet", fields: [otid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "original_tweet")
+
+  retweetd_client client @relation(fields: [uid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "retweetd_client")
+
+  @@id([tid, uid, otid])
+}
+
+model tweeted_hashtags {
+  tid  String @db.Uuid
+  htid String @db.Uuid
+
+  tagedTweet tweet @relation(fields: [tid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "taged_tweets")
+
+  hashtags hashtag @relation(fields: [htid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "hashtags")
+
+  @@id([tid, htid])
+}
+
+model client_taged_tweets {
+  tid String @db.Uuid
+  uid String @db.Uuid
+
+  clientTagedTweet tweet @relation(fields: [tid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "client_taged_tweet")
+
+  tagedClient client @relation(fields: [uid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "taged_client")
+
+  @@id([tid, uid])
+}
+
+model followers {
+  uid  String @db.Uuid
+  fuid String @db.Uuid
+
+  followerClient client @relation("follower_client", fields: [fuid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "follower_client")
+
+  leaderClient client @relation("leader_client", fields: [uid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "leader_client")
+
+  @@id([uid, fuid])
+}
+
+model cookies {
+  uid    String @unique @db.Uuid
+  cookie String @default(uuid()) @db.Uuid
+
+  clientCookie client @relation(fields: [uid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "client_cookie")
+
+}

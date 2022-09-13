@@ -1,0 +1,61 @@
+model client {
+  id            String          @id @default(uuid()) @db.Uuid
+  name          String          @db.VarChar(30)
+  user_name     String          @db.VarChar(30)
+  sex           String          @db.VarChar(7)
+  email         String          @db.VarChar(50)
+  password_hash Bytes
+  bio           String?         @db.VarChar(255)
+  piid          String?         @db.Uuid
+  image         image?          @relation(fields: [piid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "profile_img_id")
+  liked_tweets  liked_tweets[]
+  tweet         tweet[]
+  forword_tweet forword_tweet[]
+}
+
+model image {
+  id         String   @id @default(uuid()) @db.Uuid
+  data       Bytes
+  image_size Int
+  image_type String   @db.VarChar(25)
+  name       String   @db.VarChar(30)
+  digest     String   @db.VarChar(128)
+  client     client[]
+}
+
+model liked_tweets {
+  tid    String @db.Uuid
+  uid    String @db.Uuid
+  tweet  tweet  @relation(fields: [tid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "liked_tweet")
+  client client @relation(fields: [uid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "liked_owner")
+
+  @@id([tid, uid])
+}
+
+model forword_tweet {
+  tid               String @db.Uuid
+  uid               String @db.Uuid
+  ftid              String @db.Uuid
+  Quote_tweet       tweet  @relation(fields: [tid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Quote_tweet", name: "Quote_tweet")
+  Quote_tweet_owner client @relation(fields: [uid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Quote_tweet_owner")
+  forworded_tweet   tweet  @relation(fields: [ftid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "forworded_tweet", name: "forworded_tweet")
+
+  @@id([tid, uid, ftid])
+}
+
+model tweet {
+  id              String          @id @default(uuid()) @db.Uuid
+  uid             String          @db.Uuid
+  body            String          @db.VarChar(100)
+  reply_tweet_id  String?         @db.Uuid
+  tweet           tweet?          @relation("reply_tweet_id", fields: [reply_tweet_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "reply_tweet")
+  client          client          @relation(fields: [uid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "tweet_owner")
+  liked_tweets    liked_tweets[]
+  other_tweet     tweet[]         @relation("reply_tweet_id")
+  Quote_tweet     forword_tweet[] @relation(name: "Quote_tweet")
+  forworded_tweet forword_tweet[] @relation(name: "forworded_tweet")
+}
+
+
+Th!s1$TestPassw!RjEl0AY7zl!FBbq@k*srGdrgQaSqw1z!d7odqj~D$AFNN9TZSgOy8N3SJG1k&TJ
+Th!s1$TestPasswIVJqRWwwQVk3emwhRkJicUBrKnNyR2RyZ1FhU3F3MXohZDdvZHFqfkQkQUZOTjlUWlNnT3k4TjNTSkcxayZUSg==
